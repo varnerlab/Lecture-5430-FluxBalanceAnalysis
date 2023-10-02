@@ -4,7 +4,7 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 45376f68-2552-11ec-32d7-a5de0d6b6882
+# ╔═╡ f4ee0417-a667-4594-9c25-a27abebd056e
 begin
 	
 	# Setup the Julia environment -
@@ -20,35 +20,32 @@ begin
 	nothing
 end
 
-# ╔═╡ 16a831a8-14b2-4d1e-86e7-a28f21d0dbd4
+# ╔═╡ 276d790c-99dc-404b-b700-ac36be520aeb
 md"""
 ## Introduction to Metabolic Engineering
 
-Metabolic engineering is the practice of optimizing genetic and regulatory processes within cells to increase the cell's production of a desired molecule or protein of interest. 
+Metabolic engineering is the practice of optimizing genetic and regulatory processes within cells to increase the cell's production of a desired molecule or protein of interest. Metabolic engineers manipulate the biochemical networks cells use to convert raw materials into molecules necessary for survival. Metabolic engineering specifically seeks to:
 
-Metabolic engineers manipulate the biochemical networks used by cells to convert raw materials into molecules necessary for the cell's survival. Metabolic engineering specifically seeks to:
-
-1. Mathematically model biochemical networks, calculate the yield (product divided substrate) of useful products, and identify parts of the network that constrain the production of the products of interest. 
-1. Use genetic engineering techniques to modify the biochemical network in order to relieve constraints limiting production. The modified network can then be modeled to calculate the new product yield, and to identify new constraints (back to 1).
+1. Mathematically model biochemical networks, calculate the yield (product divided substrate) of useful products and identify parts of the network that constrain the production of the products of interest. 
+1. Use genetic engineering techniques to modify the biochemical network to relieve constraints limiting production. The modified network can then be modeled to calculate the new product yield and to identify new constraints (back to 1).
 
 Resources for biochemical network information:
 * [Kanehisa M, Goto S. KEGG: kyoto encyclopedia of genes and genomes. Nucleic Acids Res. 2000 Jan 1;28(1):27-30. doi: 10.1093/nar/28.1.27. PMID: 10592173; PMCID: PMC102409.](https://www.genome.jp/kegg/)
 
 * [Karp, Peter D et al. “The BioCyc collection of microbial genomes and metabolic pathways.” Briefings in bioinformatics vol. 20,4 (2019): 1085-1093. doi:10.1093/bib/bbx085](https://pubmed.ncbi.nlm.nih.gov/29447345/)
 
-* [Gama-Castro, Socorro et al. “RegulonDB version 9.0: high-level integration of gene regulation, coexpression, motif clustering and beyond.” Nucleic acids research vol. 44,D1 (2016): D133-43. doi:10.1093/nar/gkv1156](https://pubmed.ncbi.nlm.nih.gov/26527724/)
-
+* [Gama-Castro, Socorro, et al. “RegulonDB version 9.0: high-level integration of gene regulation, coexpression, motif clustering and beyond.” Nucleic acids research vol. 44,D1 (2016): D133-43. doi:10.1093/nar/gkv1156](https://pubmed.ncbi.nlm.nih.gov/26527724/)
 """
 
-# ╔═╡ 716d10ed-38bd-4654-9a54-33dfba020591
+# ╔═╡ 3f47e0bd-c201-4c82-a392-f912ef36dc3e
 md"""
 __Fig 1.__ The overall metabolic map from the KEGG database. Each dot (_node_) is a metabolite, each line (_edge_) is a metabolic reaction. 
 """
 
-# ╔═╡ ad2d1e2b-4222-43d0-819a-4a7d14746327
+# ╔═╡ e8b8d393-44b1-4146-b6d5-ec97c6152029
 PlutoUI.LocalResource("./figs/KEGG-map01100.png")
 
-# ╔═╡ cef733a0-5541-4338-bd28-0916b697fb19
+# ╔═╡ 0d51af01-c4fb-4f6e-97e1-7aeaf5ba3dec
 md"""
 ## What is Flux Balance Analysis (FBA)?
 Flux balance analysis (FBA) is a mathematical modeling and analysis approach which computes the flow (or _flux_) of carbon and energy throughout a metabolic network. FBA, a member of the constraint based family of mathematical modeling tools, is a widely used approach to compute metabolic flux. However, there are alternatives to FBA, such as metabolic flux analysis (MFA), but these alternatives vary more in the solution approach than the structure of the estimation problem. 
@@ -87,14 +84,13 @@ The stochiometric matrix is a digitial representation of the biochemistry that c
 * A stoichiometric coefficient $\sigma_{ij}$ < 0 implies that metabolite $i$ is __consumed__ by reaction $j$
 """
 
-# ╔═╡ 679f15d4-e94d-43eb-8342-701111c46201
+# ╔═╡ 43d2f9da-4bed-4c0b-877d-a437a1237c78
 md"""
 
 __Example__: Core stoichiometric matrix from _Escherichia coli_: [Orth, Jeffrey D et al. “Reconstruction and Use of Microbial Metabolic Networks: the Core Escherichia coli Metabolic Model as an Educational Guide.” EcoSal Plus vol. 4,1 (2010): 10.1128/ecosalplus.10.2.1. doi:10.1128/ecosalplus.10.2.1](https://pubmed.ncbi.nlm.nih.gov/26443778/)
 """
 
-# ╔═╡ 0f683f10-71d7-477c-9b7c-49545e60fa8a
-# load the stoichiometric matrix, and mess around with it -
+# ╔═╡ 36ea6b91-6389-45dd-899c-24bfeb265686
 begin
 	
 	# what is the model name -
@@ -102,7 +98,7 @@ begin
 	model_name = "modelReg"
 	
 	# where is model file?
-	_PATH_TO_MODEL_FILE = joinpath(_PATH_TO_DATA,model_file_name)
+	_PATH_TO_MODEL_FILE = joinpath(_PATH_TO_DATA, model_file_name)
 	
 	# load the mat file -> get the cobra_dictionary
 	file = matopen(_PATH_TO_MODEL_FILE)
@@ -110,23 +106,23 @@ begin
     close(file)
 end
 
-# ╔═╡ 095a2f1a-6ae3-451a-bc3f-7dad9a7834ea
+# ╔═╡ 5b3a1883-b7d7-4ba1-82bd-f2db85e2b5fc
 keys(cobra_dictionary)
 
-# ╔═╡ 5d7c052a-73d7-487a-939e-f813561daff9
+# ╔═╡ 4fda3fa1-166c-4680-9fff-627bb41da9e8
 # get the stoichiometric matrix 
 stm_sparse = cobra_dictionary["S"]
 
-# ╔═╡ b3e23596-0b67-4ed1-8caa-6353307ee315
+# ╔═╡ 61d6d920-41f3-49d9-a27e-2ec3f99d2ad8
 stm_full = Matrix(stm_sparse)
 
-# ╔═╡ 5f19c57c-e4ac-4c8c-9bc0-f6a015c8fb3f
+# ╔═╡ 5f2c354b-af15-495f-ad74-7751bf69c124
 mets = cobra_dictionary["metFormulas"]
 
-# ╔═╡ 1062535d-3453-4a00-89f5-66060c150dbf
+# ╔═╡ 2b74cc46-2fd3-48fa-b081-e513fae8290a
 rxns = cobra_dictionary["rxns"]
 
-# ╔═╡ 5578b9b1-8fbd-4c22-a89d-cd39ea63fe87
+# ╔═╡ 003236e7-7f33-4280-b0db-458ba0cebb36
 md"""
 Additional resources for the stoichiometric matrix
 
@@ -136,7 +132,7 @@ Additional resources for the stoichiometric matrix
 
 """
 
-# ╔═╡ 6629d6a5-af02-40c4-a7a3-a7146bf6638b
+# ╔═╡ 6374e176-5b5b-4dfd-9e12-585fc7317ffb
 md"""
 ### What are flux bounds constraints?
 Flux bounds constraints control the permissible ranges that a metabolic reaction rate (flux) can have. Flux bounds constraints can incorporate thermodynamic information (whether a reaction is reversible) as well as kinetic information. 
@@ -157,7 +153,7 @@ where $V_{max,j}^{\circ}$ denotes the maximum reaction velocity computed for enz
 
 """
 
-# ╔═╡ baedaf07-7236-432c-a67b-bd7eaa99bb7c
+# ╔═╡ 266948f9-b15c-47ae-823c-324e2d9b9573
 md"""
 ### What is the objective of an _E. coli_ cell?
 
@@ -174,7 +170,7 @@ No cells, but most of the biochemistry. Is there an objective? This is an open q
 
 """
 
-# ╔═╡ fd376fb1-1617-48a8-877b-31aa8f85476a
+# ╔═╡ 3518d9b8-af6f-4a6b-8a11-74d5bf9dbbde
 md"""
 ## Flux balance analysis case studies and examples
 
@@ -182,49 +178,12 @@ md"""
 
 """
 
-# ╔═╡ 774dd760-cebf-44ff-b753-e54353c1317e
-# TableOfContents(title="CHEME 5430: Constraint Based Methods and Models", depth=4)
-
-# ╔═╡ 8904e3f1-88ad-424e-8ac2-e4c8dfd01c4a
-html"""
-<script>
-var section = 0;
-var subsection = 0;
-var headers = document.querySelectorAll('h2, h3');
-for (var i=0; i < headers.length; i++) {
-    var header = headers[i];
-    var text = header.innerText;
-    var original = header.getAttribute("text-original");
-    if (original === null) {
-        // Save original header text
-        header.setAttribute("text-original", text);
-    } else {
-        // Replace with original text before adding section number
-        text = header.getAttribute("text-original");
-    }
-    var numbering = "";
-    switch (header.tagName) {
-        case 'H2':
-            section += 1;
-            numbering = section + ".";
-            subsection = 0;
-            break;
-        case 'H3':
-            subsection += 1;
-            numbering = section + "." + subsection;
-            break;
-    }
-    header.innerText = numbering + " " + text;
-};
-</script>
-"""
-
-# ╔═╡ d1bd21e8-86c0-4607-953b-d33a7b964ecc
+# ╔═╡ 01bb1ad0-616b-11ee-0cdf-af81f2517005
 html"""
 <style>
 main {
     max-width: 1200px;
-  	width: 45%;
+  	width: 85%;
 	margin: auto;
 	font-family: "Roboto, monospace";
 }
@@ -267,8 +226,7 @@ for (var i=0; i < headers.length; i++) {
     }
     header.innerText = numbering + " " + text;
 };
-</script>
-"""
+</script>"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -659,24 +617,22 @@ version = "17.4.0+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─16a831a8-14b2-4d1e-86e7-a28f21d0dbd4
-# ╟─716d10ed-38bd-4654-9a54-33dfba020591
-# ╠═ad2d1e2b-4222-43d0-819a-4a7d14746327
-# ╟─cef733a0-5541-4338-bd28-0916b697fb19
-# ╟─679f15d4-e94d-43eb-8342-701111c46201
-# ╠═0f683f10-71d7-477c-9b7c-49545e60fa8a
-# ╠═095a2f1a-6ae3-451a-bc3f-7dad9a7834ea
-# ╠═5d7c052a-73d7-487a-939e-f813561daff9
-# ╠═b3e23596-0b67-4ed1-8caa-6353307ee315
-# ╠═5f19c57c-e4ac-4c8c-9bc0-f6a015c8fb3f
-# ╠═1062535d-3453-4a00-89f5-66060c150dbf
-# ╟─5578b9b1-8fbd-4c22-a89d-cd39ea63fe87
-# ╠═6629d6a5-af02-40c4-a7a3-a7146bf6638b
-# ╟─baedaf07-7236-432c-a67b-bd7eaa99bb7c
-# ╟─fd376fb1-1617-48a8-877b-31aa8f85476a
-# ╠═45376f68-2552-11ec-32d7-a5de0d6b6882
-# ╠═774dd760-cebf-44ff-b753-e54353c1317e
-# ╠═8904e3f1-88ad-424e-8ac2-e4c8dfd01c4a
-# ╟─d1bd21e8-86c0-4607-953b-d33a7b964ecc
+# ╟─276d790c-99dc-404b-b700-ac36be520aeb
+# ╟─3f47e0bd-c201-4c82-a392-f912ef36dc3e
+# ╟─e8b8d393-44b1-4146-b6d5-ec97c6152029
+# ╟─0d51af01-c4fb-4f6e-97e1-7aeaf5ba3dec
+# ╟─43d2f9da-4bed-4c0b-877d-a437a1237c78
+# ╠═36ea6b91-6389-45dd-899c-24bfeb265686
+# ╠═5b3a1883-b7d7-4ba1-82bd-f2db85e2b5fc
+# ╠═4fda3fa1-166c-4680-9fff-627bb41da9e8
+# ╠═61d6d920-41f3-49d9-a27e-2ec3f99d2ad8
+# ╠═5f2c354b-af15-495f-ad74-7751bf69c124
+# ╠═2b74cc46-2fd3-48fa-b081-e513fae8290a
+# ╟─003236e7-7f33-4280-b0db-458ba0cebb36
+# ╟─6374e176-5b5b-4dfd-9e12-585fc7317ffb
+# ╟─266948f9-b15c-47ae-823c-324e2d9b9573
+# ╟─3518d9b8-af6f-4a6b-8a11-74d5bf9dbbde
+# ╟─f4ee0417-a667-4594-9c25-a27abebd056e
+# ╟─01bb1ad0-616b-11ee-0cdf-af81f2517005
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
