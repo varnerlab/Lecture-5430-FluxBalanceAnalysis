@@ -24,7 +24,7 @@ end
 md"""
 ## Introduction to Metabolic Engineering
 
-Metabolic engineering is the practice of optimizing genetic and regulatory processes within cells to increase the cell's production of a desired molecule or protein of interest. Metabolic engineers manipulate the biochemical networks cells use to convert raw materials into molecules necessary for survival. Metabolic engineering specifically seeks to:
+Metabolic engineering involves optimizing genetic and regulatory processes within cells or cell-free networks to enhance the production of a desired molecule or protein. This is achieved by manipulating the biochemical networks that convert raw materials into product molecules. The primary aim of metabolic engineering is to:
 
 1. Mathematically model biochemical networks, calculate the yield (product divided substrate) of useful products and identify parts of the network that constrain the production of the products of interest. 
 1. Use genetic engineering techniques to modify the biochemical network to relieve constraints limiting production. The modified network can then be modeled to calculate the new product yield and to identify new constraints (back to 1).
@@ -34,7 +34,7 @@ Resources for biochemical network information:
 
 * [Karp, Peter D et al. “The BioCyc collection of microbial genomes and metabolic pathways.” Briefings in bioinformatics vol. 20,4 (2019): 1085-1093. doi:10.1093/bib/bbx085](https://pubmed.ncbi.nlm.nih.gov/29447345/)
 
-* [Gama-Castro, Socorro, et al. “RegulonDB version 9.0: high-level integration of gene regulation, coexpression, motif clustering and beyond.” Nucleic acids research vol. 44,D1 (2016): D133-43. doi:10.1093/nar/gkv1156](https://pubmed.ncbi.nlm.nih.gov/26527724/)
+* [Gama-Castro, Socorro, et al. “RegulonDB version 9.0: high-level integration of gene regulation, coexpression, motif clustering and beyond.” Nucleic acids research vol. 44, D1 (2016): D133-43. doi:10.1093/nar/gkv1156](https://pubmed.ncbi.nlm.nih.gov/26527724/)
 """
 
 # ╔═╡ 3f47e0bd-c201-4c82-a392-f912ef36dc3e
