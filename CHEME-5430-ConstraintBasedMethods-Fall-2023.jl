@@ -22,7 +22,7 @@ end
 
 # ╔═╡ 276d790c-99dc-404b-b700-ac36be520aeb
 md"""
-## Introduction to Metabolic Engineering
+## Introduction to Metabolic Engineering and Flux Balance Analysis
 
 Metabolic engineering involves optimizing genetic and regulatory processes within cells or cell-free networks to enhance the production of a desired molecule or protein. This is achieved by manipulating the biochemical networks that convert raw materials into product molecules. The primary aim of metabolic engineering is to:
 
@@ -50,34 +50,35 @@ md"""
 ## What is Flux Balance Analysis (FBA)?
 Flux balance analysis (FBA) is a mathematical modeling and analysis approach which computes the flow (or _flux_) of carbon and energy throughout a metabolic network. FBA, a member of the constraint based family of mathematical modeling tools, is a widely used approach to compute metabolic flux. However, there are alternatives to FBA, such as metabolic flux analysis (MFA), but these alternatives vary more in the solution approach than the structure of the estimation problem. 
 
-Let's look at the following reference to better understand the different components of a flux balance anaysis problem:
+Let's look at the following reference to understand better the different components of a flux balance analysis problem:
 
 * [Orth, J., Thiele, I. & Palsson, B. What is flux balance analysis?. Nat Biotechnol 28, 245–248 (2010). https://doi.org/10.1038/nbt.1614](https://www.ncbi.nlm.nih.gov/labs/pmc/articles/PMC3108565/)
 
 Computational tools for working with flux balance analysis models:
 
-* [Heirendt, Laurent et al. “Creation and analysis of biochemical constraint-based models using the COBRA Toolbox v.3.0.” Nature protocols vol. 14,3 (2019): 639-702. doi:10.1038/s41596-018-0098-2](https://pubmed.ncbi.nlm.nih.gov/30787451/)
+* [Heirendt, Laurent et al. “Creation and analysis of biochemical constraint-based models using the COBRA Toolbox v.3.0.” Nature Protocols vol. 14,3 (2019): 639-702. doi:10.1038/s41596-018-0098-2](https://pubmed.ncbi.nlm.nih.gov/30787451/)
 
 #### Flux balance analysis problem structure
 The FBA problem is typically encoded as a linear programming (LP) problem of the form:
 
-$$\max_{v}\sum_{i=1}^{\mathcal{R}}c_{i}v_{i}$$
+$$\max_{v}\sum_{i \in \mathcal{R}}c_{i}v_{i}$$
 
 subject to the constraints:
 
-$$\begin{eqnarray}
-\mathbf{S}\mathbf{v} &=& \mathbf{0}\\
-\mathcal{L}\leq&\mathbf{v}&\leq\mathcal{U}\\
+$$
+\begin{eqnarray}
+\sum_{j\in\mathcal{R}}\sigma_{ij}v_{j} &=& 0 \qquad \forall{i}\in\mathcal{M}\\
+\mathcal{L}_{i}\leq&v_{i}&\leq\mathcal{U}_{i} \qquad \forall{i}\in\mathcal{R} \\
 \dots &=& \dots
 \end{eqnarray}$$
 
 where $\mathbf{S}$ denotes the stoichiometric matrix, $c_{i}$ denote the objective coefficients, 
 $\mathbf{v}$ denotes the metabolic flux (the unknown that we are trying to estimate), and 
-$\mathcal{L}$ ($\mathcal{U}$) denote the permissible lower (upper) bounds on the _unkown_ metabolic flux. The first set of constraints enforces conservation of mass, while the second imparts thermodynamic and kinetic information into the calculation. Finally, there are potentially other types of constraints (both linear and nonlinear) that can be used in this type of problem (we will not cover these here, but these additional constraints may be important in specific applications).
+$\mathcal{L}$ (or $\mathcal{U}$) denote the permissible lower (or upper) bounds on the _unknown_ metabolic flux. The first set of constraints enforces the conservation of mass, while the second imparts thermodynamic and kinetic information into the calculation. Finally, there are potentially other types of constraints (both linear and nonlinear) that can be used in this type of problem (we will not cover these here, but these additional constraints may be important in specific applications).
 
 ### What is a stoichiometric matrix?
 The basis for flux balance calculations is the stoichiometric matrix. 
-The stochiometric matrix is a digitial representation of the biochemistry that can occur insides cells (such as that shown in Fig. 1). The stochiometric matrix, denoted by $\mathbf{S}$, is a $\mathcal{M}\times\mathcal{R}$ array of stoichiometric coefficients, denoted by the symbol $\sigma_{ij}$ ($i$ is the row index, $j$ is the col index). Each of the $\mathcal{M}$ rows of $\mathbf{S}$ describes a particular metabolite (_node_ in the metabolic network) while each of the $\mathcal{R}$ columns corresponds to a metabolic reaction (_edge_ in the metabolic network). Thus:
+The stochiometric matrix is a digital representation of the biochemistry that can occur insides cells (such as that shown in Fig. 1). The stochiometric matrix, denoted by $\mathbf{S}$, is a $\mathcal{M}\times\mathcal{R}$ array of stoichiometric coefficients, denoted by the symbol $\sigma_{ij}$ ($i$ is the row index, $j$ is the col index). Each of the $\mathcal{M}$ rows of $\mathbf{S}$ describes a particular metabolite (_node_ in the metabolic network), while each of the $\mathcal{R}$ columns corresponds to a metabolic reaction (_edge_ in the metabolic network). Thus:
 
 * A stoichiometric coefficient $\sigma_{ij}$ > 0 implies that metabolite $i$ is __produced__ by reaction $j$
 * A stoichiometric coefficient $\sigma_{ij}$  = 0 implies that metabolite $i$ is __not connected__ to reaction $j$
@@ -135,22 +136,21 @@ Additional resources for the stoichiometric matrix
 # ╔═╡ 6374e176-5b5b-4dfd-9e12-585fc7317ffb
 md"""
 ### What are flux bounds constraints?
-Flux bounds constraints control the permissible ranges that a metabolic reaction rate (flux) can have. Flux bounds constraints can incorporate thermodynamic information (whether a reaction is reversible) as well as kinetic information. 
+Flux bounds constraints control the permissible ranges of a metabolic reaction rate (flux). Flux bounds constraints can incorporate thermodynamic information (whether a reaction is reversible) and kinetic information. 
 
-Resources for thermodynamics in the contraint based world: 
+Resources for thermodynamics in the constraint-based world: 
 
 * [Peres, Sabine, and Vincent Fromion. “Thermodynamic Approaches in Flux Analysis.” Methods in molecular biology (Clifton, N.J.) vol. 2088 (2020): 359-367. doi:10.1007/978-1-0716-0159-4_17](https://pubmed.ncbi.nlm.nih.gov/31893383/)
 
-* [Flamholz, Avi et al. “eQuilibrator--the biochemical thermodynamics calculator.” Nucleic acids research vol. 40,Database issue (2012): D770-5. doi:10.1093/nar/gkr874](https://pubmed.ncbi.nlm.nih.gov/22064852/)
+* [Flamholz, Avi, et al. “eQuilibrator--the biochemical thermodynamics calculator.” Nucleic acids research vol. 40, Database issue (2012): D770-5. doi:10.1093/nar/gkr874](https://pubmed.ncbi.nlm.nih.gov/22064852/)
 
 Let's do some sample calculations using [eQuilibrator](https://equilibrator.weizmann.ac.il)
 
-Thermodynamic information tells you the directionality of the reaction (is the reaction reversible), but to get the permissible magnitudes of the reaction we need to compute the kinetics. We (and others) formulate flux bounds as the product of succesive corrections t the maximum possible rate e.g., for an irrereversible reaction:
+Thermodynamic information tells you the directionality of the reaction (is the reaction reversible), but to get the permissible magnitudes of the reaction, we need to compute the kinetics. We (and others) formulate flux bounds as the product of successive corrections to the maximum possible rate, e.g., for an irreversible reaction:
 
 $$0\leq{v_{i}}\leq{V_{max,j}^{\circ}}\left(\frac{\epsilon}{\epsilon^{\circ}}\right)\theta_{j}\left(\dots\right){f_{j}\left(\dots\right)}$$
 
-where $V_{max,j}^{\circ}$ denotes the maximum reaction velocity computed for enzyme $j$ at some characteristic enzyme concetration (and full activity), the ratio $\epsilon/\epsilon^{\circ}$ is a correction for enzyme concentration, $\theta_{j}\left(\dots\right)\in\left[0,1\right]$ is an enzyme activity function (or measurement) and $f_{j}\left(\dots\right)$ is a function describing the substrate dependence of the reaction rate $j$. Both $\theta_{j}\left(\dots\right)$ and $f_{j}\left(\dots\right)$ could have associated parameters, e.g., saturation or binding constants, etc.  
-
+where $V_{max,j}^{\circ}$ denotes the maximum reaction velocity computed for enzyme $j$ at some characteristic enzyme concentration (and full activity), the ratio $\epsilon/\epsilon^{\circ}$ is a correction for enzyme concentration, $\theta_{j}\left(\dots\right)\in\left[0,1\right]$ is an enzyme activity function (or measurement) and $f_{j}\left(\dots\right)$ is a function describing the substrate dependence of the reaction rate $j$. Both $\theta_{j}\left(\dots\right)$ and $f_{j}\left(\dots\right)$ could have associated parameters, e.g., saturation or binding constants, etc.  
 """
 
 # ╔═╡ 266948f9-b15c-47ae-823c-324e2d9b9573
@@ -159,14 +159,14 @@ md"""
 
 __Short answer__: maximize the growth rate  
 
-__Longer answer__: This question was raging in the metabolic engineering community twenty years ago, but is mostly forgotten today. First, there are long standing arguments from ecology (or even from the perspective of microeconomics) as to why _E.coli_ would be goal oriented. However, Palsson and coworkers largely put this question to rest (at least for _E.coli_) with the publication:
+__Longer answer__: This question raged in the metabolic engineering community twenty years ago but is mostly forgotten today. First, there are long-standing arguments from ecology (or even from the microeconomics perspective) as to why _E.coli_ would be goal-oriented. However, Palsson and coworkers largely put this question to rest (at least for _E.coli_) with the publication:
 
 * [Ibarra, Rafael U et al. “Escherichia coli K-12 undergoes adaptive evolution to achieve in silico predicted optimal growth.” Nature vol. 420,6912 (2002): 186-9. doi:10.1038/nature01149](https://pubmed.ncbi.nlm.nih.gov/12432395/)
 
 __What about cell-free networks__? 
 No cells, but most of the biochemistry. Is there an objective? This is an open question. However, initial work in this area suggests the maximization of translation, at least for single gene systems:
 
-* [Vilkhovoy, Michael et al. “Sequence Specific Modeling of E. coli Cell-Free Protein Synthesis.” ACS synthetic biology vol. 7,8 (2018): 1844-1857. doi:10.1021/acssynbio.7b00465](https://pubmed.ncbi.nlm.nih.gov/29944340/)
+* [Vilkhovoy, Michael, et al. “Sequence-Specific Modeling of E. coli Cell-Free Protein Synthesis.” ACS Synthetic Biology vol. 7,8 (2018): 1844-1857. doi:10.1021/acssynbio.7b00465](https://pubmed.ncbi.nlm.nih.gov/29944340/)
 
 """
 
@@ -175,6 +175,8 @@ md"""
 ## Flux balance analysis case studies and examples
 
 * [Wayman, Joseph A et al. “Improving designer glycan production in Escherichia coli through model-guided metabolic engineering.” Metabolic engineering communications vol. 9 e00088. 29 Mar. 2019, doi:10.1016/j.mec.2019.e00088](https://pubmed.ncbi.nlm.nih.gov/31008057/)
+
+* [Shimpi AA, Tan ML, Vilkhovoy M, Dai D, Roberts LM, Kuo JC, Huang L, Varner JD, Paszek M, Fischbach C. Convergent Approaches to Delineate the Metabolic Regulation of Tumor Invasion by Hyaluronic Acid Biosynthesis. Adv Healthc Mater. 2023 Jun;12(14):e2202224. doi: 10.1002/adhm.202202224. Epub 2022 Dec 21. PMID: 36479976; PMCID: PMC10238572.](https://pubmed.ncbi.nlm.nih.gov/36479976/)
 
 """
 
