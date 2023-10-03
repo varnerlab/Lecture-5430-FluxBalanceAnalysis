@@ -25,4 +25,6 @@ The lecture is structured in a [Pluto](https://github.com/fonsp/Pluto.jl) notebo
 2. From Pluto, open the `ConstraintBasedMethods.jl` notebook file located in the root directory (and then enjoy)!
 
 ### Alternatively:
-You can view a static `html` version of the lecture [here](https://htmlview.glitch.me/?https://github.com/varnerlab/Lecture-5430-FluxBalanceAnalysis/blob/main/html/Lecture-ConstraintBasedMethods.jl.html)
+* You can view a static `html` version of the lecture [here](https://htmlview.glitch.me/?https://github.com/varnerlab/Lecture-5430-FluxBalanceAnalysis/blob/main/html/Lecture-ConstraintBasedMethods.jl.html)
+
+* You can view a static `pdf` version of the lecture [here](exports/CHEME-5430-ConstraintBasedMethods-Fall-2023.pdf)
