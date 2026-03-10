@@ -1,5 +1,10 @@
 # --- PRIVATE METHODS BELOW HERE ------------------------------------------------------------------------------- #
-function _default_handler_process_bigg_response(model::Type{T}, 
+"""
+Private default handler that parses a raw JSON response string from the BiGG API.
+Dispatches to the appropriate JSON.parse call based on the endpoint model type.
+Returns a parsed Julia object (typically a `Dict`), or `nothing` if the model type is unrecognized.
+"""
+function _default_handler_process_bigg_response(model::Type{T},
     response::String) where T <: AbstractBiggEndpointModel
 
     # initialize -
@@ -22,18 +27,16 @@ end
 
 # --- PUBLIC METHODS BELOW HERE -------------------------------------------------------------------------------- #
 """
-    process_forecast_response_dataframe(model::Type{T}, response::String) -> DataFrame where T <: AbstractWeatherEndpointModel
+    process_forecast_response_dataframe(model::Type{T}, response::String) -> DataFrame where T <: MyBiggModelsEndpointModel
 
-This function is used to process the response from the National Weather Service API. 
-It takes two arguments, a model of type `T`, and a response string.
-We parse the response string, and return a `DataFrame` populated from the response. 
+Process the JSON response string from a BiGG API endpoint and return a `DataFrame`.
 
 ### Arguments
-- `model::Type{T}` - The model type. Must be a subtype of `AbstractWeatherEndpointModel`.
-- `response::String` - The response string from the National Weather Service API.
+- `model::Type{T}`: the endpoint model type. Must be a subtype of `MyBiggModelsEndpointModel`.
+- `response::String`: the raw JSON response string from the BiGG API.
 
 ### Returns
-- `DataFrame` - A `DataFrame` populated with the response data.
+- `DataFrame`: a `DataFrame` populated with the response data.
 """
 function process_forecast_response_dataframe(model::Type{T}, response::String)::DataFrame where T <: MyBiggModelsEndpointModel
 

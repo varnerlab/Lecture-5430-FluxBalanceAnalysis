@@ -1,4 +1,16 @@
 # -- PRIVATE API BELOW HERE --------------------------------------------------------------------------------------- #
+"""
+Private helper that parses one side of a VFF reaction phrase (reactants or products) into a
+species-to-stoichiometric-coefficient dictionary.
+Handles optional stoichiometric coefficients written as `coeff*species` and skips null species (`∅` or `[]`).
+
+### Arguments
+- `reaction_phrase::String`: one side of a VFF reaction string (e.g., `"1.0*A+2.0*B"`).
+- `direction::Float64`: sign applied to all coefficients. Use `-1.0` for reactants, `1.0` for products.
+
+### Returns
+- `Dict{String,Float64}`: mapping from species symbol to signed stoichiometric coefficient.
+"""
 function _extract_species_dictionary(reaction_phrase::String;
 	direction::Float64 = -1.0)::Dict{String,Float64}
 
@@ -35,6 +47,17 @@ function _extract_species_dictionary(reaction_phrase::String;
 	return species_symbol_dictionary
 end
 
+"""
+Private helper that splits each reversible VFF reaction into two irreversible reactions:
+a forward reaction prefixed with `F` and a reverse reaction prefixed with `R`.
+Irreversible reactions are passed through unchanged.
+
+### Arguments
+- `reaction_array::Array{String,1}`: an array of VFF reaction strings.
+
+### Returns
+- `Array{String,1}`: an expanded array where each reversible reaction is replaced by its forward and reverse counterparts.
+"""
 function _expand_reversible_reactions(reaction_array::Array{String,1})::Array{String,1}
 
     # initialize -

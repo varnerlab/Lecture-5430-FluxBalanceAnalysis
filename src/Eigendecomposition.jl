@@ -1,3 +1,14 @@
+"""
+Private helper that computes the reduced row echelon form (RREF) of a matrix in-place using
+partial pivoting. Operates on floating-point or rational element types.
+
+### Arguments
+- `A::AbstractMatrix{T}`: the matrix to reduce in-place. Element type must be `AbstractFloat` or `Rational`.
+- `eps_val`: pivot tolerance. Defaults to `eps(norm(A, Inf))` for floating-point types and `zero(T)` for rational types.
+
+### Returns
+- `A`: the input matrix, reduced in-place to RREF form.
+"""
 function _rref!(A::AbstractMatrix{T}, eps_val=nothing) where {T<:Union{AbstractFloat,Rational}}
     if eps_val === nothing
         eps_val = T <: Rational ? zero(T) : eps(norm(A, Inf))
@@ -35,10 +46,22 @@ function _rref!(A::AbstractMatrix{T}, eps_val=nothing) where {T<:Union{AbstractF
     A
 end
 
+# Overload for integer element types — always throws, since RREF requires floating or rational types.
+# Convert first with float.(A) or rationalize.(A).
 function _rref!(A::AbstractMatrix{T}, eps_val=nothing) where {T<:Integer}
     throw(ArgumentError("_rref! requires floating or rational element types; convert with float.(A) or rationalize.(A)."))
 end
 
+"""
+Private helper that computes the upper triangular form of a matrix using Gaussian elimination
+(without pivoting). Returns a copy; the input is not modified.
+
+### Arguments
+- `matrix::Matrix`: the input matrix.
+
+### Returns
+- `Matrix`: the upper triangular form of the input matrix.
+"""
 function _upper_triangular(matrix::Matrix)
     A = copy(matrix)
     (n, m) = size(A)
@@ -53,11 +76,32 @@ function _upper_triangular(matrix::Matrix)
     return A
 end
 
+"""
+Private helper that returns the right singular vector corresponding to the smallest singular value of `A`.
+Used as a fallback nullspace vector when RREF-based extraction fails.
+
+### Arguments
+- `A::Matrix{Float64}`: the input matrix.
+
+### Returns
+- `Array{Float64,1}`: the right singular vector for the smallest singular value (last row of `Vt` from the SVD).
+"""
 function _smallest_singular_vector(A::Matrix{Float64})::Array{Float64,1}
     F = svd(A)
     return F.Vt[end, :]
 end
 
+"""
+Private helper that computes a single nullspace vector of `A` using RREF.
+If no free variable exists (i.e., `A` has full column rank), falls back to `_smallest_singular_vector`.
+
+### Arguments
+- `A::Matrix{Float64}`: the input matrix.
+- `tol::Float64`: pivot tolerance used in RREF (default `1e-10`).
+
+### Returns
+- `Array{Float64,1}`: a vector `x` such that `A*x ≈ 0`, with unit 2-norm.
+"""
 function _nullspace_vector(A::Matrix{Float64}; tol::Float64 = 1e-10)::Array{Float64,1}
     R = _rref!(copy(A), tol)
     n = size(R,2)

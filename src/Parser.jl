@@ -1,5 +1,15 @@
 import Base.+
 
+"""
+    +(buffer::Array{String,1}, line::String)
+
+Extend `Base.+` to append a `String` to a `String` array in-place.
+This allows using `+(buffer, line)` as a concise alternative to `push!(buffer, line)`.
+
+### Arguments
+- `buffer::Array{String,1}`: the string array to append to.
+- `line::String`: the string to append.
+"""
 function +(buffer::Array{String,1}, line::String)
     push!(buffer, line)
 end

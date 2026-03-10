@@ -2,6 +2,19 @@
 
 
 # --- PUBLIC METHODS BELOW HERE -------------------------------------------------------------------------------- #
+"""
+    build(base::String, model::MyBiggModelsEndpointModel; apiversion::String = "v2") -> String
+
+Build the URL string for the BiGG models listing endpoint.
+
+### Arguments
+- `base::String`: the base URL of the BiGG REST API (e.g., `"http://bigg.ucsd.edu"`).
+- `model::MyBiggModelsEndpointModel`: the endpoint model instance.
+- `apiversion::String`: the API version string (default `"v2"`).
+
+### Returns
+- `String`: the fully constructed URL for the models listing endpoint.
+"""
 function build(base::String, model::MyBiggModelsEndpointModel; apiversion::String = "v2")::String
     
     # TODO: implement this function, and remove the throw statement
@@ -14,6 +27,19 @@ function build(base::String, model::MyBiggModelsEndpointModel; apiversion::Strin
     return url_string;
 end
 
+"""
+    build(base::String, model::MyBiggModelsDownloadModelEndpointModel; apiversion::String = "v2") -> String
+
+Build the URL string for downloading a specific BiGG model.
+
+### Arguments
+- `base::String`: the base URL of the BiGG REST API (e.g., `"http://bigg.ucsd.edu"`).
+- `model::MyBiggModelsDownloadModelEndpointModel`: the endpoint model instance. Must have `bigg_id` set.
+- `apiversion::String`: the API version string (default `"v2"`).
+
+### Returns
+- `String`: the fully constructed URL for the model download endpoint.
+"""
 function build(base::String, model::MyBiggModelsDownloadModelEndpointModel; apiversion::String = "v2")::String
 
     # get data -
@@ -26,7 +52,19 @@ function build(base::String, model::MyBiggModelsDownloadModelEndpointModel; apiv
     return url_string;
 end
 
-function build(modeltype::Type{MyPrimalFluxBalanceAnalysisCalculationModel}, 
+"""
+    build(modeltype::Type{MyPrimalFluxBalanceAnalysisCalculationModel}, data::NamedTuple) -> MyPrimalFluxBalanceAnalysisCalculationModel
+
+Construct a `MyPrimalFluxBalanceAnalysisCalculationModel` from a `NamedTuple` of data.
+
+### Arguments
+- `modeltype::Type{MyPrimalFluxBalanceAnalysisCalculationModel}`: the model type to construct.
+- `data::NamedTuple`: a named tuple with fields `S`, `fluxbounds`, `objective`, `species`, and `reactions`.
+
+### Returns
+- `MyPrimalFluxBalanceAnalysisCalculationModel`: a fully populated FBA model ready to pass to `solve`.
+"""
+function build(modeltype::Type{MyPrimalFluxBalanceAnalysisCalculationModel},
     data::NamedTuple)::MyPrimalFluxBalanceAnalysisCalculationModel
 
     # get data -
