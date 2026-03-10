@@ -32,6 +32,7 @@ using Colors
 using Distributions
 using JuMP
 using GLPK
+using Test
 
 # include my codes
 include(joinpath(_PATH_TO_SRC, "Types.jl"));
