@@ -1,17 +1,44 @@
 # Problem Set 2 (PS2): Flux Balance Analysis of the Urea Cycle in HL-60 Cells
-In problem set 2 (PS2), we will explore the urea cycle in HL-60 cells using flux balance analysis. The [urea cycle](https://www.kegg.jp/pathway/hsa00220) is a crucial metabolic pathway that converts toxic ammonia into urea for excretion. While the urea cycle's role in [HL-60 cells, a human promyelocytic leukemia cell line](https://www.atcc.org/products/ccl-240?matchtype=b&network=g&device=c&adposition=&keyword=hl60%20cell%20line%20atcc&gad_source=1&gbraid=0AAAAADR6fpoOXsp8U8fXLd_E6sLTcwv24&gclid=CjwKCAiA5eC9BhAuEiwA3CKwQm0C1oE5_JjTpJ24VnTjZUZQVLivpPxmufDo7HdH5v3hN1XKnEf3ExoCvhwQAvD_BwE), is not directly established, these cells exhibit alterations in protein levels and proliferation rates when exposed to various compounds, which may indirectly affect nitrogen metabolism and related pathways.
+
+The [urea cycle](https://www.kegg.jp/pathway/hsa00220) converts toxic ammonia into urea for excretion. It is a small, well-characterized metabolic network — five enzyme-catalyzed reactions — which makes it a good first system to apply flux balance analysis to. In this problem set, we'll build an FBA model of the urea cycle in [HL-60 cells](https://www.atcc.org/products/ccl-240), estimate the flux bounds from thermodynamic and kinetic data, and solve the linear program to find the flux distribution that maximizes urea production.
+
+__Why does this matter?__ FBA requires two pieces of biological information beyond the network structure: the reversibility of each reaction and the maximum rate each enzyme can operate. Getting these right determines whether the model is feasible and biologically meaningful. Working through this problem set, you'll see exactly how thermodynamic data (from [eQuilibrator](https://equilibrator.weizmann.ac.il)) and kinetic data (from [BRENDA](https://www.brenda-enzymes.org/)) feed into the bounds, and how small errors in either can make the problem infeasible.
+
+> __Learning Objectives:__
+>
+> By the end of this problem set, you will be able to:
+>
+> * __Construct an FBA model from a reaction network:__ Build a stoichiometric matrix and flux balance analysis model from a flat-file reaction network for the urea cycle.
+> * __Estimate flux bounds from biological data:__ Use [eQuilibrator](https://equilibrator.weizmann.ac.il) to estimate reaction reversibility and [BRENDA](https://www.brenda-enzymes.org/) to estimate maximum reaction velocities, then apply these to set flux bounds.
+> * __Solve and interpret the FBA linear program:__ Formulate and solve the FBA optimization problem to compute the flux distribution that maximizes urea export, and identify the rate-limiting step.
 
 ### Tasks
-In PS2, we'll construct [a simplified model of the urea cycle](https://github.com/varnerlab/CHEME-5450-Lectures-Spring-2025/blob/main/lectures/week-5/L5c/docs/figs/Fig-Urea-cycle-Schematic.pdf), determine the reversibility of the reactions, estimates for the flux bounds, and then compute the optimal flux distribution that maximizes Urea production. Start with the setup section, and work your way through the notebook. `TODO` statements/comments indicate that you need to do something.
+In PS2, we'll construct [a simplified model of the urea cycle](https://github.com/varnerlab/CHEME-5450-Lectures-Spring-2025/blob/main/lectures/week-5/L5c/docs/figs/Fig-Urea-cycle-Schematic.pdf), determine the reversibility of the reactions, estimate the flux bounds, and compute the optimal flux distribution that maximizes Urea production. Start with the setup section and work through the notebook. `TODO` statements indicate that you need to complete something.
+
+Let's get started!
 
 ### References
 1. [Al-Otaibi NAS, Cassoli JS, Martins-de-Souza D, Slater NKH, Rahmoune H. Human leukemia cells (HL-60) proteomic and biological signatures underpinning cryo-damage are differentially modulated by novel cryo-additives. Gigascience. 2019 Mar 1;8(3):giy155. doi: 10.1093/gigascience/giy155. PMID: 30535373; PMCID: PMC6394207.](https://pmc.ncbi.nlm.nih.gov/articles/PMC6394207/)
 2. [Figarola JL, Weng Y, Lincoln C, Horne D, Rahbar S. Novel dichlorophenyl urea compounds inhibit proliferation of human leukemia HL-60 cells by inducing cell cycle arrest, differentiation and apoptosis. Invest New Drugs. 2012 Aug;30(4):1413-25. doi: 10.1007/s10637-011-9711-8. Epub 2011 Jul 5. PMID: 21728022.](https://pubmed.ncbi.nlm.nih.gov/21728022/)
 3. [Caldwell RW, Rodriguez PC, Toque HA, Narayanan SP, Caldwell RB. Arginase: A Multifaceted Enzyme Important in Health and Disease. Physiol Rev. 2018 Apr 1;98(2):641-665. doi: 10.1152/physrev.00037.2016. PMID: 29412048; PMCID: PMC5966718.](https://pmc.ncbi.nlm.nih.gov/articles/PMC5966718/)
 
+___
+
+<div>
+  <center>
+    <img
+      src="figs/Fig-Urea-cycle-Schematic.png"
+      alt="Schematic of the urea cycle"
+        width="600"
+    />
+  </center>
+</div>
+
 ## Setup, Data, and Prerequisites
 We set up the computational environment by including the `Include.jl` file and loading any needed resources.
 
+> __Environment Setup with `Include.jl`__
+>
 > The [`include(...)` command](https://docs.julialang.org/en/v1/base/base/#include) evaluates the contents of the input source file, `Include.jl`, in the notebook's global scope. The `Include.jl` file sets paths, loads required external packages, custom types, and functions used in this exercise. It checks for a `Manifest.toml` file; if one is found, packages are loaded from it. Otherwise, packages are downloaded and loaded.
 
 Let's set up our code environment:
@@ -21,9 +48,22 @@ Let's set up our code environment:
 include("Include.jl");
 ```
 
-__Build the model__. To store all the problem data, we created [the `MyPrimalFluxBalanceAnalysisCalculationModel` type](src/Types.jl). Let's build one of these objects for our problem and store it in the `model::MyPrimalFluxBalanceAnalysisCalculationModel` variable. We also return the `rd::Dict{String, String}` dictionary, which maps the reaction name field (key) to the reaction string (value).
-* __Builder (or factory) pattern__: For all custom types that we make, we'll use something like [the builder software pattern](https://en.wikipedia.org/wiki/Builder_pattern) to construct and initialize these objects. The calling syntax will be the same for all types: [a `build(...)` method](src/Factory.jl) will take the kind of thing we want to build in the first argument, and the data needed to make that type as [a `NamedTuple` instance](https://docs.julialang.org/en/v1/base/base/#Core.NamedTuple) in the second argument.
-* __What's the story with the `let` block__? A [let block](https://docs.julialang.org/en/v1/manual/variables-and-scoping/#Let-Blocks) creates a new hard scope and new variable bindings each time they run. Thus, they act like a private scratch space, where data comes in (is captured by the block), but only what we want to be exposed comes out. 
+## Task 1: Build the FBA model
+The first step is to load the reaction network from the `Network.net` file and build an FBA model. The network file encodes the five urea cycle reactions and the exchange reactions in a simple text format. From this, we build a stoichiometric matrix $\mathbf{S}$, a species list, a reaction list, and a default flux bounds array.
+
+> __What does the model contain?__
+>
+> We store all problem data in a `MyPrimalFluxBalanceAnalysisCalculationModel` instance. The key fields are:
+> * `S` — the stoichiometric matrix $\mathbf{S}\in\mathbb{R}^{|\mathcal{M}|\times|\mathcal{R}|}$
+> * `fluxbounds` — a $|\mathcal{R}|\times 2$ array of lower and upper bounds for each flux
+> * `species` and `reactions` — ordered lists that map rows and columns of `S` to metabolite and reaction names
+> * `objective` — the coefficient vector $\mathbf{c}$ for the linear objective (initially all zeros)
+>
+> We also return `rd::Dict{String, String}`, which maps each reaction name to its reaction string — useful for reading the flux table later.
+
+We'll use [the `build(...)` factory method](src/Factory.jl) to construct the model from a `NamedTuple` of data. A [let block](https://docs.julialang.org/en/v1/manual/variables-and-scoping/#Let-Blocks) keeps intermediate variables private — only `model` and `rd` are returned.
+
+__Build the model__: Let's load the network and construct the model:
 
 
 ```julia
@@ -48,38 +88,34 @@ model, rd = let
 end;
 ```
 
-## Update the flux bounds
-The flux bounds are important constraints in flux balance analysis calculations and the convex decomposition of the stoichiometric array. Beyond their role in the flux estimation problem, the flux bounds are _integrative_, i.e., these constraints integrate many types of genetic and biochemical information into the problem. A general model for these bounds is given by:
+## Task 2: Update the flux bounds
+With the model built, we need to update the flux bounds. The default bounds from the network file are coarse placeholders. We'll replace them with bounds derived from real thermodynamic and kinetic data.
+
+The flux bounds follow the simplified model:
 $$
 \begin{align*}
--\delta_{j}\underbrace{\left[{V_{max,j}^{\circ}}\left(\frac{e}{e^{\circ}}\right)\theta_{j}\left(\dots\right){f_{j}\left(\dots\right)}\right]}_{\text{reverse: other functions or parameters?}}\leq\hat{v}_{j}\leq{V_{max,j}^{\circ}}\left(\frac{e}{e^{\circ}}\right)\theta_{j}\left(\dots\right){f_{j}\left(\dots\right)}
+-\delta_{j}V_{max,j}^{\circ}\leq\hat{v}_{j}\leq{V_{max,j}^{\circ}}
 \end{align*}
 $$
-where $V_{max,j}^{\circ}$ denotes the maximum reaction velocity (units: `flux`) computed at some _characteristic enzyme abundance_. Thus, the maximum reaction velocity is given by:
-$$
-V_{max,j}^{\circ} \equiv k_{cat,j}^{\circ}e^{\circ}
-$$
-where $k_{cat,j}$ is the catalytic constant or turnover number for the enzyme (units: `1/time`) and $e^{\circ}$ is a characteristic enzyme abundance (units: `concentration`). The term $\left(e/e^{\circ}\right)$ is a correction to account for the _actual_ enzyme abundance catalyzing the reaction (units: `dimensionless`). The $\theta_{j}\left(\dots\right)\in\left[0,1\right]$ is the current fraction of maximal enzyme activity of enzyme $e$ in reaction $j$. The activity model $\theta_{j}\left(\dots\right)$ describes [allosteric effects](https://en.wikipedia.org/wiki/Allosteric_regulation) on the reaction rate, and is a function of the regulatory and the chemical state of the system, the concentration of substrates, products, and cofactors (units: `dimensionless`).
-Finally, the $f_{j}\left(\dots\right)$ is a function describing the substrate (reactants) dependence of the reaction rate $j$ (units: `dimensionless`). 
+where $V_{max,j}^{\circ} = k_{cat,j}^{\circ}e^{\circ}$ is the maximum reaction velocity at a characteristic enzyme abundance $e^{\circ}$, and $\delta_{j}\in\{0,1\}$ is the reversibility parameter. This simplified model assumes the enzyme is at its characteristic abundance, with no allosteric effects and saturating substrates.
 
-### PS2
-In problem set 2, we use a simplified bounds model to estimate the flux bounds.
-We assume that $(e/e^{\circ})\sim{1}$, there are no allosteric inputs $\theta_{j}\left(\dots\right)\sim{1}$, and the substrates are saturating $f_{j}\left(\dots\right)\sim{1}$. 
-Then, the flux bounds are given by:
-$$
-\begin{align*}
--\delta_{j}V_{max,j}^{\circ}\leq{\hat{v}_{j}}\leq{V_{max,j}^{\circ}}
-\end{align*}
-$$
-It is easy to see that the flux bounds are a function of the maximum reaction velocity, the catalytic constant or turnover number, and our assumed value of a characteristic enzyme abundance.
+> __What do we need to estimate?__
+>
+> Two quantities per reaction:
+> * __Reversibility__ $\delta_{j}$: Is the reaction thermodynamically reversible under cellular conditions? We estimate this from $\Delta G$ values using [eQuilibrator](https://equilibrator.weizmann.ac.il). If $\Delta G_j > -10$ kJ/mol, the reaction is reversible ($\delta_j = 1$); otherwise irreversible ($\delta_j = 0$).
+> * __Maximum velocity__ $V_{max,j}^{\circ}$: What is the fastest this enzyme can operate? We estimate $k_{cat,j}^{\circ}$ from [BRENDA](https://www.brenda-enzymes.org/) and compute $V_{max,j}^{\circ} = k_{cat,j}^{\circ} \cdot e^{\circ}$.
 
-### Estimate the reversibility parameters $\delta_{j}$ for reaction $j$
-First, let's estimate the reversibility parameter $\delta_{j}$ for each of the `5` enzyme-catalyzed reactions in our model of the Urea cycle using [eQuilibrator](https://equilibrator.weizmann.ac.il).
-* [Beber ME, Gollub MG, Mozaffari D, Shebek KM, Flamholz AI, Milo R, Noor E. eQuilibrator 3.0: a database solution for thermodynamic constant estimation. Nucleic Acids Res. 2022 Jan 7;50(D1): D603-D609. doi: 10.1093/nar/gkab1106. PMID: 34850162; PMCID: PMC8728285.](https://pubmed.ncbi.nlm.nih.gov/34850162/)
+We'll complete this in three steps: estimate $\delta_j$, estimate $V_{max,j}^{\circ}$, then combine them to update the bounds array.
 
-Store the results of this analysis in the `reversibility_parameter_dictionary::Dict{String, Bool}` dictionary, which maps the reaction name field (key) to the estimated reversibility parameter (value). Use a $\Delta\bar{{G}}$ threshold value (hyperparameter) of `-10.0 kJ/mol` to determine the reversibility of the reactions. 
+### Step 1: Estimate the reversibility parameters $\delta_{j}$
 
-`TODO`: Fill in the missing elements in the code block below to complete this task; when using [eQuilibrator](https://equilibrator.weizmann.ac.il), use the EC prefix, i.e., `EC 6.3.4.5` and superscript `m` value:
+> Use [eQuilibrator](https://equilibrator.weizmann.ac.il) to look up the standard Gibbs free energy $\Delta G_j$ for each of the `5` enzyme-catalyzed reactions. Search by EC number using the prefix format (e.g., `EC 6.3.4.5`) and use the superscript `m` value. Then apply the threshold rule: if $\Delta G_j > -10.0$ kJ/mol, the reaction is reversible ($\delta_j = 1$); otherwise it is irreversible ($\delta_j = 0$).
+>
+> * [Beber ME, Gollub MG, Mozaffari D, Shebek KM, Flamholz AI, Milo R, Noor E. eQuilibrator 3.0: a database solution for thermodynamic constant estimation. Nucleic Acids Res. 2022 Jan 7;50(D1):D603-D609. doi: 10.1093/nar/gkab1106. PMID: 34850162; PMCID: PMC8728285.](https://pubmed.ncbi.nlm.nih.gov/34850162/)
+
+Store the results in `reversibility_parameter_dictionary::Dict{String, Int}`, mapping reaction name (key) to $\delta_{j}$ (value). Exchange reactions (names containing `b`) are skipped — they are always treated as reversible with large default bounds.
+
+`TODO`: Fill in the `ΔG` array with values from [eQuilibrator](https://equilibrator.weizmann.ac.il):
 
 
 ```julia
@@ -124,13 +160,19 @@ reversibility_parameter_dictionary = let
 end;
 ```
 
-### Estimate the maximum reaction velocity $V_{max,j}^{\circ}$ for reaction $j$
-Next, we'll estimate the maximum reaction velocity $V_{max,j}^{\circ}$ for each of the `5` enzyme-catalyzed reactions in our model of the Urea cycle using [BRENDA](https://www.brenda-enzymes.org/):
-* [Antje Chang et al., BRENDA, the ELIXIR core data resource in 2021: new developments and updates, Nucleic Acids Research, Volume 49, Issue D1, 8 January 2021, Pages D498–D508, https://doi.org/10.1093/nar/gkaa1025](https://academic.oup.com/nar/article/49/D1/D498/5992283)
+### Step 2: Estimate the maximum reaction velocities $V_{max,j}^{\circ}$
 
-Assume the characteristic enzyme abundance $e^{\circ}\simeq$ 0.01 `μmol/gDW` for all reactions. For missing turnover numbers, use a characteristic value of $k_{cat,j}^{\circ}\simeq$ 10 `1/s`. Store the results of this analysis in the `maximum_reaction_velocity_dictionary::Dict{String, Float64}` dictionary, which maps the reaction name field (key) to the estimated maximum reaction velocity (value). 
+Now that we have the reversibility parameters, we need $V_{max,j}^{\circ} = k_{cat,j}^{\circ} \cdot e^{\circ}$ for each reaction. We look up $k_{cat,j}^{\circ}$ from [BRENDA](https://www.brenda-enzymes.org/) using the EC number. Not all enzymes have reported turnover numbers in BRENDA — for those, we use a characteristic default value of $k_{cat,j}^{\circ} = 10$ `1/s`.
 
-`TODO`: Fill in the missing elements in the code block below to complete this task:
+> __What value should we use for $e^{\circ}$?__
+>
+> We assume a characteristic enzyme abundance of $e^{\circ} = 0.01$ `μmol/gDW` for all reactions. This is a reasonable order-of-magnitude estimate for a typical enzyme in a mammalian cell. Note that the actual enzyme abundance in HL-60 cells is unknown, so this assumption introduces uncertainty into our bounds — a limitation worth keeping in mind when interpreting the FBA results.
+>
+> * [Antje Chang et al., BRENDA, the ELIXIR core data resource in 2021: new developments and updates, Nucleic Acids Research, Volume 49, Issue D1, 8 January 2021, Pages D498–D508, https://doi.org/10.1093/nar/gkaa1025](https://academic.oup.com/nar/article/49/D1/D498/5992283)
+
+Store the results in `maximum_reaction_velocity_dictionary::Dict{String, Float64}`, mapping reaction name (key) to $V_{max,j}^{\circ}$ (value).
+
+`TODO`: Fill in the `kcat` array with values from [BRENDA](https://www.brenda-enzymes.org/):
 
 
 ```julia
@@ -172,10 +214,15 @@ maximum_reaction_velocity_dictionary = let
 end;
 ```
 
-### Update the flux bounds array
-Now that we have the reversibility parameters and the maximum reaction velocities, we can update the flux bounds for each reaction in our model of the Urea cycle. 
+### Step 3: Update the flux bounds array
 
-`TODO`: Fill in the missing elements in the code block below to complete this task:
+With $\delta_j$ and $V_{max,j}^{\circ}$ in hand, we can now update the bounds. For each enzyme-catalyzed reaction, the lower bound is $-\delta_j V_{max,j}^{\circ}$ and the upper bound is $V_{max,j}^{\circ}$. Exchange reactions keep their default large bounds ($\pm 1000$) since they represent unconstrained exchange with the surroundings.
+
+> __What happens if the bounds are wrong?__
+>
+> If the lower bound is set incorrectly — for example, using $+\delta_j V_{max,j}^{\circ}$ instead of $-\delta_j V_{max,j}^{\circ}$ — then for reversible reactions the lower bound equals the upper bound, forcing the flux to a single value. Combined with the steady-state constraint $\mathbf{S}\hat{\mathbf{v}} = \mathbf{0}$, this almost always produces an infeasible problem. If you see an `AssertionError` in the solve step below, check your bounds first.
+
+`TODO`: Fill in the lower and upper bound assignments in the loop below:
 
 
 ```julia
@@ -209,10 +256,15 @@ end;
 model.fluxbounds = fluxbounds;
 ```
 
-### Update the objective function
-Finally, let's update the objective function of our model. By default, all the elements of the objective function are set to `0.0`. Update the objective function to _maximize_ the export of  `Urea` from the system. 
+### Step 4: Set the objective function
 
-`TODO`: Fill in the missing elements in the code block below to complete this task:
+The last piece before solving is specifying what we want to optimize. By default, all objective coefficients are `0.0`, which means no objective — the solver would return any feasible flux. We want to _maximize_ the export of urea from the system, which corresponds to maximizing the flux through the exchange reaction `b4` (the urea export reaction).
+
+> __Why set the objective coefficient to `-1`?__
+>
+> [JuMP](https://jump.dev/) (the optimization package we use) minimizes by default. To maximize the flux through `b4`, we set its objective coefficient to `-1`. Minimizing $-\hat{v}_{b4}$ is equivalent to maximizing $\hat{v}_{b4}$.
+
+`TODO`: Specify the reaction to maximize in `reaction_to_maximize` below:
 
 
 ```julia
@@ -221,9 +273,18 @@ reaction_to_maximize = "b4"; # TODO: specify the reaction to maximize (use the r
 findfirst(x-> x==reaction_to_maximize, model.reactions) |> i -> objective[i] = -1; # why negative 1? because we're maximizing the flux through the reaction
 ```
 
-## Compute the optimal flux distribution
-Let's compute the optimal metabolic distribution $\left\{\hat{v}_{i} \mid i = 1,2,\dots,\mathcal{R}\right\}$ by solving the [linear programming problem](). We solve the optimization problem by passing the `model::MyPrimalFluxBalanceAnalysisCalculationModel` to [the `solve(...)` method](src/Compute.jl). This method returns a `solution::Dict{String, Any}` dictionary containing information about the solution.
-* __Why the [try-catch environment](https://docs.julialang.org/en/v1/base/base/#try)__? The [solve(...) method](src/Compute.jl) has an [@assert statement](https://docs.julialang.org/en/v1/base/base/#Base.@assert) to check if the calculation has converged. Thus, the solve method will [throw](https://docs.julialang.org/en/v1/base/base/#Core.throw) an [AssertionError](https://docs.julialang.org/en/v1/base/base/#Core.AssertionError) if the optimization problem fails to converge. To gracefully handle this case, we use a [try-catch construct](https://docs.julialang.org/en/v1/base/base/#try). See the [is_solved_and_feasible method from the JuMP package](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.is_solved_and_feasible) for more information.
+## Task 3: Solve the FBA problem
+We now have everything we need: the stoichiometric matrix $\mathbf{S}$, the updated flux bounds, and the objective function. We solve the FBA linear program by passing the `model` to [the `solve(...)` method](src/Compute.jl).
+
+> __What does the solver return?__
+>
+> If the problem is feasible and bounded, `solve(...)` returns a `solution::Dict{String, Any}` dictionary with:
+> * `solution["argmax"]` — the optimal flux vector $\hat{\mathbf{v}}^{*}$
+> * `solution["objective"]` — the optimal objective value (maximum urea export rate)
+>
+> If the problem is infeasible, `solve(...)` throws an `AssertionError`. The `try-catch` block below catches this and prints the error so you can diagnose the issue — most commonly a bounds error from Task 2. See [is_solved_and_feasible](https://jump.dev/JuMP.jl/stable/api/JuMP/#JuMP.is_solved_and_feasible) in the JuMP documentation for more information.
+
+Let's solve:
 
 
 ```julia
@@ -242,8 +303,16 @@ end;
 ```
 
 ### Flux table
-`Unhide` the code block below to see how we constructed the flux table using [the `pretty_tables(...)` method exported by the `PrettyTables.jl` package](https://github.com/ronisbr/PrettyTables.jl).
-* __Summary__: Each row of the flux table holds information about a reaction in the model. The first column has the reaction name, the second column has the estimated optimal flux value (solution of the FBA problem), the third and fourth columns hold the lower (LB) and upper (UB) for the estimated flux, and the last column has the reaction string for the flux.
+The flux table shows the optimal flux through every reaction in the model, along with its bounds and reaction equation. Look at this table carefully before answering the discussion questions — it contains everything you need.
+
+> __How to read the flux table:__
+>
+> * Reactions `v1`–`v5` are the enzyme-catalyzed urea cycle reactions. `b1`–`b14` are exchange reactions.
+> * A flux value equal to the upper bound (UB) means that reaction is operating at its maximum — it may be rate-limiting.
+> * A flux of `0.0` means the reaction is not used in the optimal solution.
+> * Negative exchange fluxes mean the metabolite is being _exported_ from the system; positive means _imported_.
+
+`Unhide` the code block below to see the flux table:
 
 
 ```julia
@@ -308,7 +377,14 @@ do_I_see_the_flux_table = true; # TODO: update this flag to {true | false} if th
 ```
 
 ## Discussion
-Use you code and simulation results to answer the following questions.
+Use your flux table and simulation results to answer the following questions. There are no single right answers — use the data to support your reasoning.
+
+> __Things to think about before answering:__
+>
+> * Which reactions are carrying flux in the optimal solution, and which are silent?
+> * Which reaction is operating at its upper bound? What does that tell you about the rate-limiting step?
+> * What metabolites are being imported or exported? Do those make sense given the urea cycle stoichiometry?
+> * What would happen to the urea production rate if the rate-limiting enzyme's $k_{cat}$ were doubled?
 
 __DQ1__: What is the maximum rate of Urea export from the system using your updated model parameters, and what species are exported or imported into the system to support this production level?
 
@@ -349,6 +425,17 @@ did_I_answer_DQ3 = true; # update to true if answered DQ3 {true | false}
 ## Tests
 `Unhide` the code block below (if you are curious) about how we implemented the tests and what we are testing. In these tests, we check values in your notebook and give feedback on which items are correct, missing etc.
 
+## Summary
+This problem set constructs and solves an FBA problem for the urea cycle, using thermodynamic and kinetic data to set flux bounds and GLPK to find the optimal flux distribution.
+
+> __Key Takeaways:__
+>
+> * __Flux bounds integrate biological data:__ Reaction reversibility from thermodynamics (eQuilibrator) and maximum velocities from enzyme kinetics (BRENDA) together define the feasible flux space for the FBA problem.
+> * __FBA as a linear program:__ The optimal flux distribution is found by solving a linear program subject to steady-state mass balance constraints ($\mathbf{S}\hat{\mathbf{v}} = \mathbf{0}$) and flux bounds.
+> * __Rate-limiting steps from FBA:__ The flux solution identifies which reaction constrains overall urea production — the reaction whose flux is at its upper bound limits the objective.
+
+___
+
 
 ```julia
 let
@@ -381,8 +468,8 @@ end;
 ```
 
     [0m[1mTest Summary:                       | [22m[32m[1mPass  [22m[39m[36m[1mTotal  [22m[39m[0m[1mTime[22m
-    CHEME 5450 problem set 2 test suite | [32m  12  [39m[36m   12  [39m[0m0.7s
-      Setup                             | [32m   7  [39m[36m    7  [39m[0m0.7s
+    CHEME 5450 problem set 2 test suite | [32m  12  [39m[36m   12  [39m[0m0.4s
+      Setup                             | [32m   7  [39m[36m    7  [39m[0m0.4s
       Calculation                       | [32m   2  [39m[36m    2  [39m[0m0.0s
       Discussion questions              | [32m   3  [39m[36m    3  [39m[0m0.0s
 
